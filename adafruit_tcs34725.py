@@ -69,6 +69,7 @@ class TCS34725:
 
     def __init__(self, i2c, address=0x29):
         self._device = i2c_device.I2CDevice(i2c, address)
+        sensor_id = self._read_u8(_REGISTER_SENSORID)
         self._active = False
         self.integration_time = 2.4
         # Check sensor ID is expectd value.
@@ -78,34 +79,34 @@ class TCS34725:
 
     def _read_u8(self, address):
         # Read an 8-bit unsigned value from the specified 8-bit address.
-        with self._device:
-            self._BUFFER[0] = address & 0xFF
-            self._device.write(self._BUFFER, end=1)
-            self._device.readinto(self._BUFFER, end=1)
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            i2c.write(self._BUFFER, end=1, stop=False)
+            i2c.readinto(self._BUFFER, end=1)
         return self._BUFFER[0]
 
     def _read_u16(self, address):
         # Read a 16-bit BE unsigned value from the specified 8-bit address.
-        with self._device:
-            self._BUFFER[0] = address & 0xFF
-            self._device.write(self._BUFFER, end=1)
-            self._device.readinto(self._BUFFER, end=2)
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            i2c.write(self._BUFFER, end=1, stop=False)
+            i2c.readinto(self._BUFFER, end=2)
         return (self._BUFFER[0] << 8) | self._BUFFER[1]
 
     def _write_u8(self, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
-        with self._device:
-            self._BUFFER[0] = address & 0xFF
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             self._BUFFER[1] = val & 0xFF
-            self._device.write(self._BUFFER, end=2)
+            i2c.write(self._BUFFER, end=2)
 
     def _write_u16(self, address, val):
         # Write a 16-bit BE unsigned value to the specified 8-bit address.
-        with self._device:
-            self._BUFFER[0] = address & 0xFF
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             self._BUFFER[1] = (val >> 8) & 0xFF
             self._BUFFER[2] = val & 0xFF
-            self._device.write(self._BUFFER)
+            i2c.write(self._BUFFER)
 
     @property
     def active(self):
