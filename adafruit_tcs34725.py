@@ -32,12 +32,15 @@ See examples/simpletest.py for an example of the usage.
 * Author(s): Tony DiCola
 """
 import time
-import ustruct
 
 import adafruit_bus_device.i2c_device as i2c_device
+from micropython import const
 
+__version__ = "0.0.0-auto.0"
+__repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_TCS34725.git"
 
 # Register and command constants:
+# pylint: disable=bad-whitespace
 _COMMAND_BIT       = const(0x80)
 _REGISTER_ENABLE   = const(0x00)
 _REGISTER_ATIME    = const(0x01)
@@ -58,9 +61,23 @@ _ENABLE_AEN        = const(0x02)
 _ENABLE_PON        = const(0x01)
 _GAINS  = (1, 4, 16, 60)
 _CYCLES = (0, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
+# pylint: enable=bad-whitespace
 
+
+def _temperature_and_lux(data):
+    """Convert the 4-tuple of raw RGBC data to color temperature and lux values. Will return
+       2-tuple of color temperature and lux."""
+    r, g, b, _ = data
+    x = -0.14282 * r + 1.54924 * g + -0.95641 * b
+    y = -0.32466 * r + 1.57837 * g + -0.73191 * b
+    z = -0.68202 * r + 0.77073 * g +  0.56332 * b
+    divisor = x + y + z
+    n = (x / divisor - 0.3320) / (0.1858 - y / divisor)
+    cct = 449.0 * n**3 + 3525.0 * n**2 + 6823.3 * n + 5520.33
+    return cct, y
 
 class TCS34725:
+    """Driver for the TCS34725 color sensor."""
 
     # Class-level buffer for reading and writing data with the sensor.
     # This reduces memory allocations but means the code is not re-entrant or
@@ -140,7 +157,7 @@ class TCS34725:
     def integration_time(self, val):
         assert 2.4 <= val <= 614.4
         cycles = int(val / 2.4)
-        self._integration_time = cycles * 2.4
+        self._integration_time = cycles * 2.4 # pylint: disable=attribute-defined-outside-init
         self._write_u8(_REGISTER_ATIME, 256-cycles)
 
     @property
@@ -196,34 +213,24 @@ class TCS34725:
         """Read the RGB color detected by the sensor.  Returns a 3-tuple of
         red, green, blue component values as bytes (0-255).
         """
-        r, g, b, c = self.color_raw
-        red   = int(pow((int((r/c) * 256) / 255), 2.5) * 255)
-        green = int(pow((int((g/c) * 256) / 255), 2.5) * 255)
-        blue  = int(pow((int((b/c) * 256) / 255), 2.5) * 255)
+        r, g, b, clear = self.color_raw
+        # pylint: disable=bad-whitespace
+        red   = int(pow((int((r/clear) * 256) / 255), 2.5) * 255)
+        green = int(pow((int((g/clear) * 256) / 255), 2.5) * 255)
+        blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
         return (red, green, blue)
 
-    def temperature_and_lux(self, data):
-        """Convert the 4-tuple of raw RGBC data to color temperature and lux values. Will return a 2-tuple of color temperature, lux.
-        """
-        r, g, b, c = data
-        x = -0.14282 * r + 1.54924 * g + -0.95641 * b
-        y = -0.32466 * r + 1.57837 * g + -0.73191 * b
-        z = -0.68202 * r + 0.77073 * g +  0.56332 * b
-        d = x + y + z
-        n = (x / d - 0.3320) / (0.1858 - y / d)
-        cct = 449.0 * n**3 + 3525.0 * n**2 + 6823.3 * n + 5520.33
-        return cct, y
 
     @property
     def temperature(self):
         """Return the detected color temperature in degrees."""
-        temp, lux = self.temperature_and_lux(self.color_raw)
+        temp, _ = _temperature_and_lux(self.color_raw)
         return temp
 
     @property
     def lux(self):
         """Return the detected light level in lux."""
-        temp, lux = self.temperature_and_lux(self.color_raw)
+        _, lux = _temperature_and_lux(self.color_raw)
         return lux
 
     @property
@@ -231,8 +238,7 @@ class TCS34725:
         """Get and set the persistence cycles of the sensor."""
         if self._read_u8(_REGISTER_ENABLE) & _ENABLE_AIEN:
             return _CYCLES[self._read_u8(_REGISTER_APERS) & 0x0f]
-        else:
-            return -1
+        return -1
 
     @cycles.setter
     def cycles(self, val):
@@ -262,6 +268,6 @@ class TCS34725:
         """
         return self._read_u16(_REGISTER_AIHT)
 
-    @min_value.setter
+    @max_value.setter
     def max_value(self, val):
         self._write_u16(_REGISTER_AIHT, val)

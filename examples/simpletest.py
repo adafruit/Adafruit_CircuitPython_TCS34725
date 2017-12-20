@@ -1,8 +1,9 @@
 # Simple demo of the TCS34725 color sensor.
 # Will detect the color from the sensor and print it out every second.
+import time
+
 import board
 import busio
-import time
 
 import adafruit_tcs34725
 
