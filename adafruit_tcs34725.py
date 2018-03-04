@@ -25,7 +25,7 @@
 
 CircuitPython module for the TCS34725 color sensor.  Ported from the
 micropython-adafruit-tcs34725 module by Radomir Dopieralski:
-  https://github.com/adafruit/micropython-adafruit-tcs34725
+https://github.com/adafruit/micropython-adafruit-tcs34725
 
 See examples/tcs34725_simpletest.py for an example of the usage.
 
