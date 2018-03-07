@@ -191,8 +191,7 @@ class TCS34725:
 
     @property
     def interrupt(self):
-        """Return and clear the interrupt of the sensor.  Returns a bool that's
-        True if the interrupt is set.  Can be set to False (and only False)
+        """True if the interrupt is set. Can be set to False (and only False)
         to clear the interrupt.
         """
         return bool(self._read_u8(_REGISTER_STATUS) & _ENABLE_AIEN)
