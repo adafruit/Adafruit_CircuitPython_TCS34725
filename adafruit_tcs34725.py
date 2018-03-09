@@ -25,11 +25,28 @@
 
 CircuitPython module for the TCS34725 color sensor.  Ported from the
 micropython-adafruit-tcs34725 module by Radomir Dopieralski:
-  https://github.com/adafruit/micropython-adafruit-tcs34725
+https://github.com/adafruit/micropython-adafruit-tcs34725
 
-See examples/simpletest.py for an example of the usage.
+See examples/tcs34725_simpletest.py for an example of the usage.
 
 * Author(s): Tony DiCola
+
+Implementation Notes
+--------------------
+
+**Hardware:**
+
+* Adafruit `RGB Color Sensor with IR filter and White LED - TCS34725
+  <https://www.adafruit.com/product/1334>`_ (Product ID: 1334)
+
+* Flora `Color Sensor with White Illumination LED - TCS34725
+  <https://www.adafruit.com/product/1356>`_ (Product ID: 1356)
+
+**Software and Dependencies:**
+
+* Adafruit CircuitPython firmware for the ESP8622 and M0-based boards:
+  https://github.com/adafruit/circuitpython/releases
+* Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 import time
 
@@ -127,7 +144,7 @@ class TCS34725:
 
     @property
     def active(self):
-        """Get and set the active state of the sensor.  Boolean value that will
+        """The active state of the sensor.  Boolean value that will
         enable/activate the sensor with a value of True and disable with a
         value of False.
         """
@@ -150,7 +167,7 @@ class TCS34725:
 
     @property
     def integration_time(self):
-        """Get and set the integration time of the sensor in milliseconds."""
+        """The integration time of the sensor in milliseconds."""
         return self._integration_time
 
     @integration_time.setter
@@ -162,7 +179,7 @@ class TCS34725:
 
     @property
     def gain(self):
-        """Get and set the gain of the sensor.  Should be a value of 1, 4, 16,
+        """The gain of the sensor.  Should be a value of 1, 4, 16,
         or 60.
         """
         return _GAINS[self._read_u8(_REGISTER_CONTROL)]
@@ -174,8 +191,7 @@ class TCS34725:
 
     @property
     def interrupt(self):
-        """Get and clear the interrupt of the sensor.  Returns a bool that's
-        True if the interrupt is set.  Can be set to False (and only False)
+        """True if the interrupt is set. Can be set to False (and only False)
         to clear the interrupt.
         """
         return bool(self._read_u8(_REGISTER_STATUS) & _ENABLE_AIEN)
@@ -235,7 +251,7 @@ class TCS34725:
 
     @property
     def cycles(self):
-        """Get and set the persistence cycles of the sensor."""
+        """The persistence cycles of the sensor."""
         if self._read_u8(_REGISTER_ENABLE) & _ENABLE_AIEN:
             return _CYCLES[self._read_u8(_REGISTER_APERS) & 0x0f]
         return -1
@@ -252,7 +268,7 @@ class TCS34725:
 
     @property
     def min_value(self):
-        """Get and set the minimum threshold value (AILT register) of the
+        """The minimum threshold value (AILT register) of the
         sensor as a 16-bit unsigned value.
         """
         return self._read_u16(_REGISTER_AILT)
@@ -263,7 +279,7 @@ class TCS34725:
 
     @property
     def max_value(self):
-        """Get and set the minimum threshold value (AIHT register) of the
+        """The minimum threshold value (AIHT register) of the
         sensor as a 16-bit unsigned value.
         """
         return self._read_u16(_REGISTER_AIHT)
