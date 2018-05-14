@@ -24,6 +24,5 @@ while True:
         print('Temperature: {0}K Lux: {1}'.format(temp, lux))
     except ZeroDivisionError:
         print("No light to measure")
-    
     # Delay for a second and repeat.
     time.sleep(1.0)
