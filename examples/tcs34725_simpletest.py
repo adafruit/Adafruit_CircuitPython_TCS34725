@@ -18,8 +18,11 @@ while True:
     r, g, b = sensor.color_rgb_bytes
     print('Detected color: #{0:02X}{1:02X}{2:02X}'.format(r, g, b))
     # Read the color temperature and lux of the sensor too.
-    temp = sensor.temperature
-    lux = sensor.lux
+    try:
+        temp = sensor.temperature
+        lux = sensor.lux
+    except ZeroDivisionError:
+        print("No light to measure")
     print('Temperature: {0}K Lux: {1}'.format(temp, lux))
     # Delay for a second and repeat.
     time.sleep(1.0)
