@@ -269,7 +269,7 @@ class TCS34725:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_AIEN))
         else:
             if val not in _CYCLES:
-                raise ValueError("Only the following values for cycles are permitted: {0}".format(_CYCLES))
+                raise ValueError("Only the following cycles are permitted: {0}".format(_CYCLES))
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_AIEN)
             self._write_u8(_REGISTER_APERS, _CYCLES.index(val))
 
