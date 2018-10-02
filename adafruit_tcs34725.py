@@ -78,6 +78,8 @@ _ENABLE_AEN        = const(0x02)
 _ENABLE_PON        = const(0x01)
 _GAINS  = (1, 4, 16, 60)
 _CYCLES = (0, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
+_INTEGRATION_TIME_THRESHOLD_LOW = 2.4
+_INTEGRATION_TIME_THRESHOLD_HIGH = 614.4
 # pylint: enable=bad-whitespace
 
 
@@ -172,7 +174,9 @@ class TCS34725:
 
     @integration_time.setter
     def integration_time(self, val):
-        assert 2.4 <= val <= 614.4
+        if not _INTEGRATION_TIME_THRESHOLD_LOW <= val <= _INTEGRATION_TIME_THRESHOLD_HIGH:
+            raise ValueError("Integration Time must be between '{0}' and '{1}'".format(
+                _INTEGRATION_TIME_THRESHOLD_LOW, _INTEGRATION_TIME_THRESHOLD_HIGH))
         cycles = int(val / 2.4)
         self._integration_time = cycles * 2.4 # pylint: disable=attribute-defined-outside-init
         self._write_u8(_REGISTER_ATIME, 256-cycles)
@@ -186,7 +190,8 @@ class TCS34725:
 
     @gain.setter
     def gain(self, val):
-        assert val in _GAINS
+        if val not in _GAINS:
+            raise ValueError("Gain should be one of the following values: {0}".format(_GAINS))
         self._write_u8(_REGISTER_CONTROL, _GAINS.index(val))
 
     @property
@@ -198,7 +203,8 @@ class TCS34725:
 
     @interrupt.setter
     def interrupt(self, val):
-        assert not val
+        if val:
+            raise ValueError("Interrupt should be set to False in order to clear the interrupt")
         with self._device:
             self._device.write(b'\xe6')
 
@@ -262,7 +268,8 @@ class TCS34725:
         if val == -1:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_AIEN))
         else:
-            assert val in _CYCLES
+            if val not in _CYCLES:
+                raise ValueError("Only the following cycles are permitted: {0}".format(_CYCLES))
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_AIEN)
             self._write_u8(_REGISTER_APERS, _CYCLES.index(val))
 
