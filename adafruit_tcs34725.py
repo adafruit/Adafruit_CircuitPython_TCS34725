@@ -250,7 +250,7 @@ class TCS34725:
         Blue = 255 (0x0000ff), SlateGray = 7372944 (0x708090)
         """
         r, g, b = self.color_rgb_bytes
-        return (r << 16) + (g << 8) + b
+        return (r << 16) | (g << 8) | b
 
 
     @property
