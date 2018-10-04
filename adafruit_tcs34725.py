@@ -242,6 +242,16 @@ class TCS34725:
         blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
         return (red, green, blue)
 
+    @property
+    def color(self):
+        """Read the RGB color detected by the sensor. Returns an int with 8 bits per channel.
+
+        Examples: Red = 16711680 (0xff0000), Green = 65280 (0x00ff00),
+        Blue = 255 (0x0000ff), SlateGray = 7372944 (0x708090)
+        """
+        r, g, b = self.color_rgb_bytes
+        return (r << 16) + (g << 8) + b
+
 
     @property
     def temperature(self):
