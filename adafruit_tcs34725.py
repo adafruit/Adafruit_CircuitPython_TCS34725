@@ -236,10 +236,20 @@ class TCS34725:
         red, green, blue component values as bytes (0-255).
         """
         r, g, b, clear = self.color_raw
+        # Avoid divide by zero errors ... if clear = 0 return black
+        if clear == 0:
+            return (0, 0, 0)
         # pylint: disable=bad-whitespace
         red   = int(pow((int((r/clear) * 256) / 255), 2.5) * 255)
         green = int(pow((int((g/clear) * 256) / 255), 2.5) * 255)
         blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
+        # Handle possible 8-bit overflow
+        if red > 255:
+            red = 255
+        if green > 255:
+            green = 255
+        if blue > 255:
+            blue = 255
         return (red, green, blue)
 
     @property
