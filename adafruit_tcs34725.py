@@ -95,6 +95,8 @@ class TCS34725:
         self._device = i2c_device.I2CDevice(i2c, address)
         self._active = False
         self.integration_time = 2.4
+        self._glass_attenuation = None
+        self.glass_attenuation = 1.0
         # Check sensor ID is expectd value.
         sensor_id = self._read_u8(_REGISTER_SENSORID)
         if sensor_id not in (0x44, 0x10):
@@ -247,13 +249,13 @@ class TCS34725:
         R, G, B, C = self.color_raw
 
         # Device specific values (DN40 Table 1 in Appendix I)
-        GA = 1.0            # Glass Attenuation Factor
-        DF = 310.0          # Device Factor
-        R_Coef = 0.136      # |
-        G_Coef = 1.0        # | used in lux computation
-        B_Coef = -0.444     # |
-        CT_Coef = 3810      # Color Temperature Coefficient
-        CT_Offset = 1391    # Color Temperatuer Offset
+        GA = self.glass_attenuation # Glass Attenuation Factor
+        DF = 310.0                  # Device Factor
+        R_Coef = 0.136              # |
+        G_Coef = 1.0                # | used in lux computation
+        B_Coef = -0.444             # |
+        CT_Coef = 3810              # Color Temperature Coefficient
+        CT_Offset = 1391            # Color Temperatuer Offset
 
         # Analog/Digital saturation (DN40 3.5)
         SATURATION = 65535 if 256 - ATIME > 63 else 1024 * (256 - ATIME)
@@ -281,6 +283,23 @@ class TCS34725:
         CT = CT_Coef * B2 / R2 + CT_Offset
 
         return lux, CT
+
+    @property
+    def glass_attenuation(self):
+        """The Glass Attenuation (FA) factor used to compensate for lower light
+        levels at the device due to the possible presence of glass. The GA is
+        the inverse of the glass transmissivity (T), so GA = 1/T. A transmissivity
+        of 50% gives GA = 1 / 0.50 = 2. If no glass is present, use GA = 1.
+        See Application Note: DN40-Rev 1.0 – Lux and CCT Calculations using
+        ams Color Sensors for more details.
+        """
+        return self._glass_attenuation
+
+    @glass_attenuation.setter
+    def glass_attenuation(self, value):
+        if value < 1:
+            raise ValueError("Glass attenuation factor must be at least 1.")
+        self._glass_attenuation = value
 
     def _valid(self):
         # Check if the status bit is set and the chip is ready.
