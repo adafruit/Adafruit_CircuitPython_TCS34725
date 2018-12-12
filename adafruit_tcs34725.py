@@ -29,7 +29,7 @@ https://github.com/adafruit/micropython-adafruit-tcs34725
 
 See examples/tcs34725_simpletest.py for an example of the usage.
 
-* Author(s): Tony DiCola
+* Author(s): Tony DiCola, Carter Nelson
 
 Implementation Notes
 --------------------
@@ -83,18 +83,6 @@ _INTEGRATION_TIME_THRESHOLD_HIGH = 614.4
 # pylint: enable=bad-whitespace
 
 
-def _temperature_and_lux(data):
-    """Convert the 4-tuple of raw RGBC data to color temperature and lux values. Will return
-       2-tuple of color temperature and lux."""
-    r, g, b, _ = data
-    x = -0.14282 * r + 1.54924 * g + -0.95641 * b
-    y = -0.32466 * r + 1.57837 * g + -0.73191 * b
-    z = -0.68202 * r + 0.77073 * g +  0.56332 * b
-    divisor = x + y + z
-    n = (x / divisor - 0.3320) / (0.1858 - y / divisor)
-    cct = 449.0 * n**3 + 3525.0 * n**2 + 6823.3 * n + 5520.33
-    return cct, y
-
 class TCS34725:
     """Driver for the TCS34725 color sensor."""
 
@@ -105,7 +93,6 @@ class TCS34725:
 
     def __init__(self, i2c, address=0x29):
         self._device = i2c_device.I2CDevice(i2c, address)
-        sensor_id = self._read_u8(_REGISTER_SENSORID)
         self._active = False
         self.integration_time = 2.4
         # Check sensor ID is expectd value.
@@ -113,36 +100,15 @@ class TCS34725:
         if sensor_id not in (0x44, 0x10):
             raise RuntimeError('Could not find sensor, check wiring!')
 
-    def _read_u8(self, address):
-        # Read an 8-bit unsigned value from the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            i2c.write(self._BUFFER, end=1, stop=False)
-            i2c.readinto(self._BUFFER, end=1)
-        return self._BUFFER[0]
+    @property
+    def lux(self):
+        """The lux value computed from the color channels."""
+        return self._temperature_and_lux_dn40()[0]
 
-    def _read_u16(self, address):
-        # Read a 16-bit BE unsigned value from the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            i2c.write(self._BUFFER, end=1, stop=False)
-            i2c.readinto(self._BUFFER, end=2)
-        return (self._BUFFER[0] << 8) | self._BUFFER[1]
-
-    def _write_u8(self, address, val):
-        # Write an 8-bit unsigned value to the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            self._BUFFER[1] = val & 0xFF
-            i2c.write(self._BUFFER, end=2)
-
-    def _write_u16(self, address, val):
-        # Write a 16-bit BE unsigned value to the specified 8-bit address.
-        with self._device as i2c:
-            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            self._BUFFER[1] = (val >> 8) & 0xFF
-            self._BUFFER[2] = val & 0xFF
-            i2c.write(self._BUFFER)
+    @property
+    def color_temperature(self):
+        """The color temperature in degrees Kelvin."""
+        return self._temperature_and_lux_dn40()[1]
 
     @property
     def active(self):
@@ -208,10 +174,6 @@ class TCS34725:
         with self._device:
             self._device.write(b'\xe6')
 
-    def _valid(self):
-        # Check if the status bit is set and the chip is ready.
-        return bool(self._read_u8(_REGISTER_STATUS) & 0x01)
-
     @property
     def color_raw(self):
         """Read the raw RGBC color detected by the sensor.  Returns a 4-tuple of
@@ -229,51 +191,6 @@ class TCS34725:
         ))
         self.active = was_active
         return data
-
-    @property
-    def color_rgb_bytes(self):
-        """Read the RGB color detected by the sensor.  Returns a 3-tuple of
-        red, green, blue component values as bytes (0-255).
-        """
-        r, g, b, clear = self.color_raw
-        # Avoid divide by zero errors ... if clear = 0 return black
-        if clear == 0:
-            return (0, 0, 0)
-        # pylint: disable=bad-whitespace
-        red   = int(pow((int((r/clear) * 256) / 255), 2.5) * 255)
-        green = int(pow((int((g/clear) * 256) / 255), 2.5) * 255)
-        blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
-        # Handle possible 8-bit overflow
-        if red > 255:
-            red = 255
-        if green > 255:
-            green = 255
-        if blue > 255:
-            blue = 255
-        return (red, green, blue)
-
-    @property
-    def color(self):
-        """Read the RGB color detected by the sensor. Returns an int with 8 bits per channel.
-
-        Examples: Red = 16711680 (0xff0000), Green = 65280 (0x00ff00),
-        Blue = 255 (0x0000ff), SlateGray = 7372944 (0x708090)
-        """
-        r, g, b = self.color_rgb_bytes
-        return (r << 16) | (g << 8) | b
-
-
-    @property
-    def temperature(self):
-        """Return the detected color temperature in degrees."""
-        temp, _ = _temperature_and_lux(self.color_raw)
-        return temp
-
-    @property
-    def lux(self):
-        """Return the detected light level in lux."""
-        _, lux = _temperature_and_lux(self.color_raw)
-        return lux
 
     @property
     def cycles(self):
@@ -314,3 +231,88 @@ class TCS34725:
     @max_value.setter
     def max_value(self, val):
         self._write_u16(_REGISTER_AIHT, val)
+
+    def _temperature_and_lux_dn40(self):
+        """Converts the raw R/G/B values to color temperature in degrees
+        Kelvin using the algorithm described in DN40 from Taos (now AMS).
+        Also computes lux. Returns tuple with both values or tuple of Nones
+        if computation can not be done.
+        """
+        # pylint: disable=bad-whitespace, invalid-name, too-many-locals
+
+        # Initial input values
+        ATIME = self._read_u8(_REGISTER_ATIME)
+        ATIME_ms = (256 - ATIME) * 2.4
+        AGAINx = self.gain
+        R, G, B, C = self.color_raw
+
+        # Device specific values (DN40 Table 1 in Appendix I)
+        GA = 1.0            # Glass Attenuation Factor
+        DF = 310.0          # Device Factor
+        R_Coef = 0.136      # |
+        G_Coef = 1.0        # | used in lux computation
+        B_Coef = -0.444     # |
+        CT_Coef = 3810      # Color Temperature Coefficient
+        CT_Offset = 1391    # Color Temperatuer Offset
+
+        # Analog/Digital saturation (DN40 3.5)
+        SATURATION = 65535 if 256 - ATIME > 63 else 1024 * (256 - ATIME)
+
+        # Ripple saturation (DN40 3.7)
+        if ATIME_ms < 150:
+            SATURATION -= SATURATION / 4
+
+        # Check for saturation and mark the sample as invalid if true
+        if C >= SATURATION:
+            return None, None
+
+        # IR Rejection (DN40 3.1)
+        IR = (R + G + B - C) / 2 if R + G + B > C else 0.
+        R2 = R - IR
+        G2 = G - IR
+        B2 = B - IR
+
+        # Lux Calculation (DN40 3.2)
+        G1 = R_Coef * R2 + G_Coef * G2 + B_Coef * B2
+        CPL = (ATIME_ms * AGAINx) / (GA * DF)
+        lux = G1 / CPL
+
+        # CT Calculations (DN40 3.4)
+        CT = CT_Coef * B2 / R2 + CT_Offset
+
+        return lux, CT
+
+    def _valid(self):
+        # Check if the status bit is set and the chip is ready.
+        return bool(self._read_u8(_REGISTER_STATUS) & 0x01)
+
+    def _read_u8(self, address):
+        # Read an 8-bit unsigned value from the specified 8-bit address.
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            i2c.write(self._BUFFER, end=1, stop=False)
+            i2c.readinto(self._BUFFER, end=1)
+        return self._BUFFER[0]
+
+    def _read_u16(self, address):
+        # Read a 16-bit unsigned value from the specified 8-bit address.
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            i2c.write(self._BUFFER, end=1, stop=False)
+            i2c.readinto(self._BUFFER, end=2)
+        return (self._BUFFER[1] << 8) | self._BUFFER[0]
+
+    def _write_u8(self, address, val):
+        # Write an 8-bit unsigned value to the specified 8-bit address.
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            self._BUFFER[1] = val & 0xFF
+            i2c.write(self._BUFFER, end=2)
+
+    def _write_u16(self, address, val):
+        # Write a 16-bit unsigned value to the specified 8-bit address.
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            self._BUFFER[1] = val & 0xFF
+            self._BUFFER[2] = (val >> 8) & 0xFF
+            i2c.write(self._BUFFER)
