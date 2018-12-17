@@ -113,6 +113,37 @@ class TCS34725:
         return self._temperature_and_lux_dn40()[1]
 
     @property
+    def color_rgb_bytes(self):
+        """Read the RGB color detected by the sensor.  Returns a 3-tuple of
+        red, green, blue component values as bytes (0-255).
+        """
+        r, g, b, clear = self.color_raw
+        # Avoid divide by zero errors ... if clear = 0 return black
+        if clear == 0:
+            return (0, 0, 0)
+        # pylint: disable=bad-whitespace
+        red   = int(pow((int((r/clear) * 256) / 255), 2.5) * 255)
+        green = int(pow((int((g/clear) * 256) / 255), 2.5) * 255)
+        blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
+        # Handle possible 8-bit overflow
+        if red > 255:
+            red = 255
+        if green > 255:
+            green = 255
+        if blue > 255:
+            blue = 255
+        return (red, green, blue)
+
+    @property
+    def color(self):
+        """Read the RGB color detected by the sensor. Returns an int with 8 bits per channel.
+        Examples: Red = 16711680 (0xff0000), Green = 65280 (0x00ff00),
+        Blue = 255 (0x0000ff), SlateGray = 7372944 (0x708090)
+        """
+        r, g, b = self.color_rgb_bytes
+        return (r << 16) | (g << 8) | b
+
+    @property
     def active(self):
         """The active state of the sensor.  Boolean value that will
         enable/activate the sensor with a value of True and disable with a
