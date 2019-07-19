@@ -311,7 +311,11 @@ class TCS34725:
         lux = G1 / CPL
 
         # CT Calculations (DN40 3.4)
-        CT = CT_Coef * B2 / R2 + CT_Offset
+        # Prevent divide by zero errors. if r2 = 0 use a really small r2 to print offset
+        if R2 > 0:
+            CT = CT_Coef * B2 / R2 + CT_Offset
+        else:
+            CT = CT_Coef * B2 / 0.001 + CT_Offset
 
         return lux, CT
 
