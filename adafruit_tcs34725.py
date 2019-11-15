@@ -308,9 +308,11 @@ class TCS34725:
         # Lux Calculation (DN40 3.2)
         G1 = R_Coef * R2 + G_Coef * G2 + B_Coef * B2
         CPL = (ATIME_ms * AGAINx) / (GA * DF)
+        CPL = 0.001 if CPL == 0 else CPL
         lux = G1 / CPL
 
         # CT Calculations (DN40 3.4)
+        R2 = 0.001 if R2 == 0 else R2
         CT = CT_Coef * B2 / R2 + CT_Offset
 
         return lux, CT
