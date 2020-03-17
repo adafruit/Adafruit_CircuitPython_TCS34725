@@ -58,25 +58,25 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_TCS34725.git"
 
 # Register and command constants:
 # pylint: disable=bad-whitespace
-_COMMAND_BIT       = const(0x80)
-_REGISTER_ENABLE   = const(0x00)
-_REGISTER_ATIME    = const(0x01)
-_REGISTER_AILT     = const(0x04)
-_REGISTER_AIHT     = const(0x06)
-_REGISTER_ID       = const(0x12)
-_REGISTER_APERS    = const(0x0c)
-_REGISTER_CONTROL  = const(0x0f)
+_COMMAND_BIT = const(0x80)
+_REGISTER_ENABLE = const(0x00)
+_REGISTER_ATIME = const(0x01)
+_REGISTER_AILT = const(0x04)
+_REGISTER_AIHT = const(0x06)
+_REGISTER_ID = const(0x12)
+_REGISTER_APERS = const(0x0C)
+_REGISTER_CONTROL = const(0x0F)
 _REGISTER_SENSORID = const(0x12)
-_REGISTER_STATUS   = const(0x13)
-_REGISTER_CDATA    = const(0x14)
-_REGISTER_RDATA    = const(0x16)
-_REGISTER_GDATA    = const(0x18)
-_REGISTER_BDATA    = const(0x1a)
-_ENABLE_AIEN       = const(0x10)
-_ENABLE_WEN        = const(0x08)
-_ENABLE_AEN        = const(0x02)
-_ENABLE_PON        = const(0x01)
-_GAINS  = (1, 4, 16, 60)
+_REGISTER_STATUS = const(0x13)
+_REGISTER_CDATA = const(0x14)
+_REGISTER_RDATA = const(0x16)
+_REGISTER_GDATA = const(0x18)
+_REGISTER_BDATA = const(0x1A)
+_ENABLE_AIEN = const(0x10)
+_ENABLE_WEN = const(0x08)
+_ENABLE_AEN = const(0x02)
+_ENABLE_PON = const(0x01)
+_GAINS = (1, 4, 16, 60)
 _CYCLES = (0, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
 _INTEGRATION_TIME_THRESHOLD_LOW = 2.4
 _INTEGRATION_TIME_THRESHOLD_HIGH = 614.4
@@ -100,7 +100,7 @@ class TCS34725:
         # Check sensor ID is expectd value.
         sensor_id = self._read_u8(_REGISTER_SENSORID)
         if sensor_id not in (0x44, 0x10):
-            raise RuntimeError('Could not find sensor, check wiring!')
+            raise RuntimeError("Could not find sensor, check wiring!")
 
     @property
     def lux(self):
@@ -122,9 +122,9 @@ class TCS34725:
         if clear == 0:
             return (0, 0, 0)
         # pylint: disable=bad-whitespace
-        red   = int(pow((int((r/clear) * 256) / 255), 2.5) * 255)
-        green = int(pow((int((g/clear) * 256) / 255), 2.5) * 255)
-        blue  = int(pow((int((b/clear) * 256) / 255), 2.5) * 255)
+        red = int(pow((int((r / clear) * 256) / 255), 2.5) * 255)
+        green = int(pow((int((g / clear) * 256) / 255), 2.5) * 255)
+        blue = int(pow((int((b / clear) * 256) / 255), 2.5) * 255)
         # Handle possible 8-bit overflow
         if red > 255:
             red = 255
@@ -163,8 +163,7 @@ class TCS34725:
             time.sleep(0.003)
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_PON | _ENABLE_AEN)
         else:
-            self._write_u8(_REGISTER_ENABLE,
-                           enable & ~(_ENABLE_PON | _ENABLE_AEN))
+            self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_PON | _ENABLE_AEN))
 
     @property
     def integration_time(self):
@@ -173,12 +172,21 @@ class TCS34725:
 
     @integration_time.setter
     def integration_time(self, val):
-        if not _INTEGRATION_TIME_THRESHOLD_LOW <= val <= _INTEGRATION_TIME_THRESHOLD_HIGH:
-            raise ValueError("Integration Time must be between '{0}' and '{1}'".format(
-                _INTEGRATION_TIME_THRESHOLD_LOW, _INTEGRATION_TIME_THRESHOLD_HIGH))
+        if (
+            not _INTEGRATION_TIME_THRESHOLD_LOW
+            <= val
+            <= _INTEGRATION_TIME_THRESHOLD_HIGH
+        ):
+            raise ValueError(
+                "Integration Time must be between '{0}' and '{1}'".format(
+                    _INTEGRATION_TIME_THRESHOLD_LOW, _INTEGRATION_TIME_THRESHOLD_HIGH
+                )
+            )
         cycles = int(val / 2.4)
-        self._integration_time = cycles * 2.4 # pylint: disable=attribute-defined-outside-init
-        self._write_u8(_REGISTER_ATIME, 256-cycles)
+        self._integration_time = (
+            cycles * 2.4
+        )  # pylint: disable=attribute-defined-outside-init
+        self._write_u8(_REGISTER_ATIME, 256 - cycles)
 
     @property
     def gain(self):
@@ -190,7 +198,9 @@ class TCS34725:
     @gain.setter
     def gain(self, val):
         if val not in _GAINS:
-            raise ValueError("Gain should be one of the following values: {0}".format(_GAINS))
+            raise ValueError(
+                "Gain should be one of the following values: {0}".format(_GAINS)
+            )
         self._write_u8(_REGISTER_CONTROL, _GAINS.index(val))
 
     @property
@@ -203,9 +213,11 @@ class TCS34725:
     @interrupt.setter
     def interrupt(self, val):
         if val:
-            raise ValueError("Interrupt should be set to False in order to clear the interrupt")
+            raise ValueError(
+                "Interrupt should be set to False in order to clear the interrupt"
+            )
         with self._device:
-            self._device.write(b'\xe6')
+            self._device.write(b"\xe6")
 
     @property
     def color_raw(self):
@@ -215,13 +227,16 @@ class TCS34725:
         was_active = self.active
         self.active = True
         while not self._valid():
-            time.sleep((self._integration_time + 0.9)/1000.0)
-        data = tuple(self._read_u16(reg) for reg in (
-            _REGISTER_RDATA,
-            _REGISTER_GDATA,
-            _REGISTER_BDATA,
-            _REGISTER_CDATA,
-        ))
+            time.sleep((self._integration_time + 0.9) / 1000.0)
+        data = tuple(
+            self._read_u16(reg)
+            for reg in (
+                _REGISTER_RDATA,
+                _REGISTER_GDATA,
+                _REGISTER_BDATA,
+                _REGISTER_CDATA,
+            )
+        )
         self.active = was_active
         return data
 
@@ -229,7 +244,7 @@ class TCS34725:
     def cycles(self):
         """The persistence cycles of the sensor."""
         if self._read_u8(_REGISTER_ENABLE) & _ENABLE_AIEN:
-            return _CYCLES[self._read_u8(_REGISTER_APERS) & 0x0f]
+            return _CYCLES[self._read_u8(_REGISTER_APERS) & 0x0F]
         return -1
 
     @cycles.setter
@@ -239,7 +254,9 @@ class TCS34725:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_AIEN))
         else:
             if val not in _CYCLES:
-                raise ValueError("Only the following cycles are permitted: {0}".format(_CYCLES))
+                raise ValueError(
+                    "Only the following cycles are permitted: {0}".format(_CYCLES)
+                )
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_AIEN)
             self._write_u8(_REGISTER_APERS, _CYCLES.index(val))
 
@@ -280,13 +297,13 @@ class TCS34725:
         R, G, B, C = self.color_raw
 
         # Device specific values (DN40 Table 1 in Appendix I)
-        GA = self.glass_attenuation # Glass Attenuation Factor
-        DF = 310.0                  # Device Factor
-        R_Coef = 0.136              # |
-        G_Coef = 1.0                # | used in lux computation
-        B_Coef = -0.444             # |
-        CT_Coef = 3810              # Color Temperature Coefficient
-        CT_Offset = 1391            # Color Temperatuer Offset
+        GA = self.glass_attenuation  # Glass Attenuation Factor
+        DF = 310.0  # Device Factor
+        R_Coef = 0.136  # |
+        G_Coef = 1.0  # | used in lux computation
+        B_Coef = -0.444  # |
+        CT_Coef = 3810  # Color Temperature Coefficient
+        CT_Offset = 1391  # Color Temperatuer Offset
 
         # Analog/Digital saturation (DN40 3.5)
         SATURATION = 65535 if 256 - ATIME > 63 else 1024 * (256 - ATIME)
@@ -300,7 +317,7 @@ class TCS34725:
             return None, None
 
         # IR Rejection (DN40 3.1)
-        IR = (R + G + B - C) / 2 if R + G + B > C else 0.
+        IR = (R + G + B - C) / 2 if R + G + B > C else 0.0
         R2 = R - IR
         G2 = G - IR
         B2 = B - IR
@@ -342,16 +359,14 @@ class TCS34725:
         # Read an 8-bit unsigned value from the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            i2c.write_then_readinto(self._BUFFER, self._BUFFER,
-                                    out_end=1, in_end=1)
+            i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=1)
         return self._BUFFER[0]
 
     def _read_u16(self, address):
         # Read a 16-bit unsigned value from the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
-            i2c.write_then_readinto(self._BUFFER, self._BUFFER,
-                                    out_end=1, in_end=2)
+            i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=2)
         return (self._BUFFER[1] << 8) | self._BUFFER[0]
 
     def _write_u8(self, address, val):

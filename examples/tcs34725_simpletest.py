@@ -17,6 +17,6 @@ while True:
     # Read the color temperature and lux of the sensor too.
     temp = sensor.color_temperature
     lux = sensor.lux
-    print('Temperature: {0}K Lux: {1}'.format(temp, lux))
+    print("Temperature: {0}K Lux: {1}".format(temp, lux))
     # Delay for a second and repeat.
     time.sleep(1.0)
