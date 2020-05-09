@@ -140,8 +140,11 @@ class TCS34725:
         Examples: Red = 16711680 (0xff0000), Green = 65280 (0x00ff00),
         Blue = 255 (0x0000ff), SlateGray = 7372944 (0x708090)
         """
-        r, g, b = self.color_rgb_bytes
-        return (r << 16) | (g << 8) | b
+        r, g, b, c = self.color_raw
+        scaled_r = r * 255 // 1024
+        scaled_g = g * 255 // 1024
+        scaled_b = b * 255 // 1024
+        return (scaled_r << 16) | (scaled_g << 8) | scaled_b
 
     @property
     def active(self):
