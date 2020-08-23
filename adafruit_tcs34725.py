@@ -57,7 +57,6 @@ __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_TCS34725.git"
 
 # Register and command constants:
-# pylint: disable=bad-whitespace
 _COMMAND_BIT = const(0x80)
 _REGISTER_ENABLE = const(0x00)
 _REGISTER_ATIME = const(0x01)
@@ -80,7 +79,6 @@ _GAINS = (1, 4, 16, 60)
 _CYCLES = (0, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
 _INTEGRATION_TIME_THRESHOLD_LOW = 2.4
 _INTEGRATION_TIME_THRESHOLD_HIGH = 614.4
-# pylint: enable=bad-whitespace
 
 
 class TCS34725:
@@ -121,7 +119,6 @@ class TCS34725:
         # Avoid divide by zero errors ... if clear = 0 return black
         if clear == 0:
             return (0, 0, 0)
-        # pylint: disable=bad-whitespace
         red = int(pow((int((r / clear) * 256) / 255), 2.5) * 255)
         green = int(pow((int((g / clear) * 256) / 255), 2.5) * 255)
         blue = int(pow((int((b / clear) * 256) / 255), 2.5) * 255)
@@ -288,7 +285,7 @@ class TCS34725:
         Also computes lux. Returns tuple with both values or tuple of Nones
         if computation can not be done.
         """
-        # pylint: disable=bad-whitespace, invalid-name, too-many-locals
+        # pylint: disable=invalid-name, too-many-locals
 
         # Initial input values
         ATIME = self._read_u8(_REGISTER_ATIME)
