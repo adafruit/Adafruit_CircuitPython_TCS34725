@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 # Simple demo of the TCS34725 color sensor.
 # Will detect the color from the sensor and print it out every second.
 import time
