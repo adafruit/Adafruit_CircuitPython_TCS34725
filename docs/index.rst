@@ -23,6 +23,8 @@ Table of Contents
 .. toctree::
     :caption: Tutorials
 
+    Adafruit Color Sensors <https://learn.adafruit.com/adafruit-color-sensors/overview>
+
 .. toctree::
     :caption: Related Products
 

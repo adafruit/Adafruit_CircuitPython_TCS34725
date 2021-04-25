@@ -6,9 +6,11 @@
 `adafruit_tcs34725`
 ====================================================
 
-CircuitPython module for the TCS34725 color sensor.  Ported from the
-micropython-adafruit-tcs34725 module by Radomir Dopieralski:
-https://github.com/adafruit/micropython-adafruit-tcs34725
+CircuitPython module for the TCS34725 color sensor.
+Ported from the
+`micropython-adafruit-tcs34725 <https://github.com/adafruit/micropython-adafruit-tcs34725>`_
+module by Radomir Dopieralski
+
 
 See examples/tcs34725_simpletest.py for an example of the usage.
 
@@ -27,8 +29,9 @@ Implementation Notes
 
 **Software and Dependencies:**
 
-* Adafruit CircuitPython firmware for the ESP8622 and M0-based boards:
-  https://github.com/adafruit/circuitpython/releases
+* Adafruit CircuitPython firmware for the supported boards:
+  https://circuitpython.org/downloads
+
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 import time
@@ -65,7 +68,39 @@ _INTEGRATION_TIME_THRESHOLD_HIGH = 614.4
 
 
 class TCS34725:
-    """Driver for the TCS34725 color sensor."""
+    """Driver for the TCS34725 color sensor.
+
+    :param ~busio.I2C i2c: The I2C bus the device is connected to
+    :param int address: The I2C device address. Defaults to :const:`0x29`
+
+
+    **Quickstart: Importing and using the device**
+
+        Here is an example of using the :class:`TCS34725`.
+        First you will need to import the libraries to use the sensor
+
+        .. code-block:: python
+
+            import board
+            import adafruit_tcs34725
+
+        Once this is done you can define your `board.I2C` object and define your sensor object
+
+        .. code-block:: python
+
+            i2c = board.I2C()  # uses board.SCL and board.SDA
+            sensor = adafruit_tcs34725.TCS34725(i2c)
+
+
+        Now you have access to the :attr:`color_temperature`, :attr:`lux` attributes
+
+        .. code-block:: python
+
+            temp = sensor.color_temperature
+            lux = sensor.lux
+
+
+    """
 
     # Class-level buffer for reading and writing data with the sensor.
     # This reduces memory allocations but means the code is not re-entrant or
@@ -318,7 +353,7 @@ class TCS34725:
     def glass_attenuation(self):
         """The Glass Attenuation (FA) factor used to compensate for lower light
         levels at the device due to the possible presence of glass. The GA is
-        the inverse of the glass transmissivity (T), so GA = 1/T. A transmissivity
+        the inverse of the glass transmissivity (T), so :math:`GA = 1/T`. A transmissivity
         of 50% gives GA = 1 / 0.50 = 2. If no glass is present, use GA = 1.
         See Application Note: DN40-Rev 1.0 – Lux and CCT Calculations using
         ams Color Sensors for more details.
