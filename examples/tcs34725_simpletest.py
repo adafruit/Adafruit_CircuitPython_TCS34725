@@ -4,15 +4,12 @@
 # Simple demo of the TCS34725 color sensor.
 # Will detect the color from the sensor and print it out every second.
 import time
-
 import board
-import busio
-
 import adafruit_tcs34725
 
 
-# Initialize I2C bus and sensor.
-i2c = busio.I2C(board.SCL, board.SDA)
+# Create sensor object, communicating over the board's default I2C bus
+i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = adafruit_tcs34725.TCS34725(i2c)
 
 # Main loop reading color and printing it every second.
