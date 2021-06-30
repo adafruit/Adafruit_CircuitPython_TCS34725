@@ -141,8 +141,7 @@ class TCS34725:
 
         """Each color value is normalized to clear, to obtain int values between 0 and 255.
         A gamma correction of 2.5 is applied to each value as well, first dividing by 255,
-        since gamma is applied to values between 0 and 1
-        """
+        since gamma is applied to values between 0 and 1 """
         red = int(pow((int((r / clear) * 256) / 255), 2.5) * 255)
         green = int(pow((int((g / clear) * 256) / 255), 2.5) * 255)
         blue = int(pow((int((b / clear) * 256) / 255), 2.5) * 255)
