@@ -57,6 +57,11 @@ Usage Example
 
 See examples/tcs34725_simpletest.py for an example of the module's usage.
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/tcs34725/en/latest/>`_.
+
 Contributing
 ============
 
