@@ -306,7 +306,7 @@ class TCS34725:
     def max_value(self, val: int):
         self._write_u16(_REGISTER_AIHT, val)
 
-    def _temperature_and_lux_dn40(self) -> Tuple(float, float):
+    def _temperature_and_lux_dn40(self) -> Tuple[float, float]:
         """Converts the raw R/G/B values to color temperature in degrees
         Kelvin using the algorithm described in DN40 from Taos (now AMS).
         Also computes lux. Returns tuple with both values or tuple of Nones
