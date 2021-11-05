@@ -36,7 +36,7 @@ Implementation Notes
 """
 import time
 
-import adafruit_bus_device.i2c_device as i2c_device
+from adafruit_bus_device import i2c_device
 from micropython import const
 
 try:
@@ -153,12 +153,9 @@ class TCS34725:
         blue = int(pow((int((b / clear) * 256) / 255), 2.5) * 255)
 
         # Handle possible 8-bit overflow
-        if red > 255:
-            red = 255
-        if green > 255:
-            green = 255
-        if blue > 255:
-            blue = 255
+        red = min(red, 255)
+        green = min(green, 255)
+        blue = min(blue, 255)
         return (red, green, blue)
 
     @property
