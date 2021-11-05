@@ -39,6 +39,12 @@ import time
 import adafruit_bus_device.i2c_device as i2c_device
 from micropython import const
 
+try:
+    from typing import Tuple
+    from busio import I2C
+except ImportError:
+    pass
+
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_TCS34725.git"
 
@@ -107,7 +113,7 @@ class TCS34725:
     # thread safe!
     _BUFFER = bytearray(3)
 
-    def __init__(self, i2c, address=0x29):
+    def __init__(self, i2c: I2C, address: int = 0x29):
         self._device = i2c_device.I2CDevice(i2c, address)
         self._active = False
         self.integration_time = 2.4
@@ -173,7 +179,7 @@ class TCS34725:
         return self._active
 
     @active.setter
-    def active(self, val):
+    def active(self, val: bool):
         val = bool(val)
         if self._active == val:
             return
@@ -192,7 +198,7 @@ class TCS34725:
         return self._integration_time
 
     @integration_time.setter
-    def integration_time(self, val):
+    def integration_time(self, val: float):
         if (
             not _INTEGRATION_TIME_THRESHOLD_LOW
             <= val
@@ -217,7 +223,7 @@ class TCS34725:
         return _GAINS[self._read_u8(_REGISTER_CONTROL)]
 
     @gain.setter
-    def gain(self, val):
+    def gain(self, val: int):
         if val not in _GAINS:
             raise ValueError(
                 "Gain should be one of the following values: {0}".format(_GAINS)
@@ -232,7 +238,7 @@ class TCS34725:
         return bool(self._read_u8(_REGISTER_STATUS) & _ENABLE_AIEN)
 
     @interrupt.setter
-    def interrupt(self, val):
+    def interrupt(self, val: bool):
         if val:
             raise ValueError(
                 "Interrupt should be set to False in order to clear the interrupt"
@@ -269,7 +275,7 @@ class TCS34725:
         return -1
 
     @cycles.setter
-    def cycles(self, val):
+    def cycles(self, val: int):
         enable = self._read_u8(_REGISTER_ENABLE)
         if val == -1:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_AIEN))
@@ -289,7 +295,7 @@ class TCS34725:
         return self._read_u16(_REGISTER_AILT)
 
     @min_value.setter
-    def min_value(self, val):
+    def min_value(self, val: int):
         self._write_u16(_REGISTER_AILT, val)
 
     @property
@@ -300,10 +306,10 @@ class TCS34725:
         return self._read_u16(_REGISTER_AIHT)
 
     @max_value.setter
-    def max_value(self, val):
+    def max_value(self, val: int):
         self._write_u16(_REGISTER_AIHT, val)
 
-    def _temperature_and_lux_dn40(self):
+    def _temperature_and_lux_dn40(self) -> Tuple(float, float):
         """Converts the raw R/G/B values to color temperature in degrees
         Kelvin using the algorithm described in DN40 from Taos (now AMS).
         Also computes lux. Returns tuple with both values or tuple of Nones
@@ -367,37 +373,37 @@ class TCS34725:
         return self._glass_attenuation
 
     @glass_attenuation.setter
-    def glass_attenuation(self, value):
+    def glass_attenuation(self, value: float):
         if value < 1:
             raise ValueError("Glass attenuation factor must be at least 1.")
         self._glass_attenuation = value
 
-    def _valid(self):
+    def _valid(self) -> bool:
         # Check if the status bit is set and the chip is ready.
         return bool(self._read_u8(_REGISTER_STATUS) & 0x01)
 
-    def _read_u8(self, address):
+    def _read_u8(self, address: int) -> int:
         # Read an 8-bit unsigned value from the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=1)
         return self._BUFFER[0]
 
-    def _read_u16(self, address):
+    def _read_u16(self, address: int) -> int:
         # Read a 16-bit unsigned value from the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=2)
         return (self._BUFFER[1] << 8) | self._BUFFER[0]
 
-    def _write_u8(self, address, val):
+    def _write_u8(self, address: int, val: int):
         # Write an 8-bit unsigned value to the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             self._BUFFER[1] = val & 0xFF
             i2c.write(self._BUFFER, end=2)
 
-    def _write_u16(self, address, val):
+    def _write_u16(self, address: int, val: int):
         # Write a 16-bit unsigned value to the specified 8-bit address.
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
