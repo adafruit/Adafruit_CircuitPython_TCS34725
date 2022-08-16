@@ -12,7 +12,7 @@ requires = [
 [project]
 name = "adafruit-circuitpython-tcs34725"
 description = "CircuitPython library for TCS34725 color sensor."
-version = "0.0.0-auto.0"
+version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
     {name = "Adafruit Industries", email = "circuitpython@adafruit.com"}
