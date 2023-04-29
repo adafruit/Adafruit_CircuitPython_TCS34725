@@ -121,7 +121,7 @@ class TCS34725:
         self.glass_attenuation = 1.0
         # Check sensor ID is expectd value.
         sensor_id = self._read_u8(_REGISTER_SENSORID)
-        if sensor_id not in (0x44, 0x10):
+        if sensor_id not in (0x44, 0x10, 0x4D):
             raise RuntimeError("Could not find sensor, check wiring!")
 
     @property
