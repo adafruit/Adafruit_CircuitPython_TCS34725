@@ -34,6 +34,7 @@ Implementation Notes
 
 * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
+
 import time
 
 from adafruit_bus_device import i2c_device
@@ -41,6 +42,7 @@ from micropython import const
 
 try:
     from typing import Tuple
+
     from busio import I2C
 except ImportError:
     pass
@@ -121,7 +123,7 @@ class TCS34725:
         self.glass_attenuation = 1.0
         # Check sensor ID is expectd value.
         sensor_id = self._read_u8(_REGISTER_SENSORID)
-        if sensor_id not in (0x44, 0x10, 0x4D):
+        if sensor_id not in {0x44, 0x10, 0x4D}:
             raise RuntimeError("Could not find sensor, check wiring!")
 
     @property
@@ -196,20 +198,12 @@ class TCS34725:
 
     @integration_time.setter
     def integration_time(self, val: float):
-        if (
-            not _INTEGRATION_TIME_THRESHOLD_LOW
-            <= val
-            <= _INTEGRATION_TIME_THRESHOLD_HIGH
-        ):
+        if not _INTEGRATION_TIME_THRESHOLD_LOW <= val <= _INTEGRATION_TIME_THRESHOLD_HIGH:
             raise ValueError(
-                "Integration Time must be between '{0}' and '{1}'".format(
-                    _INTEGRATION_TIME_THRESHOLD_LOW, _INTEGRATION_TIME_THRESHOLD_HIGH
-                )
+                f"Integration Time must be between '{_INTEGRATION_TIME_THRESHOLD_LOW}' and '{_INTEGRATION_TIME_THRESHOLD_HIGH}'"  # noqa: E501
             )
         cycles = int(val / 2.4)
-        self._integration_time = (
-            cycles * 2.4
-        )  # pylint: disable=attribute-defined-outside-init
+        self._integration_time = cycles * 2.4
         self._write_u8(_REGISTER_ATIME, 256 - cycles)
 
     @property
@@ -222,9 +216,7 @@ class TCS34725:
     @gain.setter
     def gain(self, val: int):
         if val not in _GAINS:
-            raise ValueError(
-                "Gain should be one of the following values: {0}".format(_GAINS)
-            )
+            raise ValueError(f"Gain should be one of the following values: {_GAINS}")
         self._write_u8(_REGISTER_CONTROL, _GAINS.index(val))
 
     @property
@@ -237,9 +229,7 @@ class TCS34725:
     @interrupt.setter
     def interrupt(self, val: bool):
         if val:
-            raise ValueError(
-                "Interrupt should be set to False in order to clear the interrupt"
-            )
+            raise ValueError("Interrupt should be set to False in order to clear the interrupt")
         with self._device:
             self._device.write(b"\xe6")
 
@@ -278,9 +268,7 @@ class TCS34725:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_AIEN))
         else:
             if val not in _CYCLES:
-                raise ValueError(
-                    "Only the following cycles are permitted: {0}".format(_CYCLES)
-                )
+                raise ValueError(f"Only the following cycles are permitted: {_CYCLES}")
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_AIEN)
             self._write_u8(_REGISTER_APERS, _CYCLES.index(val))
 
@@ -312,7 +300,6 @@ class TCS34725:
         Also computes lux. Returns tuple with both values or tuple of Nones
         if computation can not be done.
         """
-        # pylint: disable=invalid-name, too-many-locals
 
         # Initial input values
         ATIME = self._read_u8(_REGISTER_ATIME)
