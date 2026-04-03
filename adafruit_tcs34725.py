@@ -113,11 +113,12 @@ class TCS34725:
     # Class-level buffer for reading and writing data with the sensor.
     # This reduces memory allocations but means the code is not re-entrant or
     # thread safe!
-    _BUFFER = bytearray(3)
+    _BUFFER = bytearray(8)
 
     def __init__(self, i2c: I2C, address: int = 0x29):
         self._device = i2c_device.I2CDevice(i2c, address)
         self._active = False
+        self._valid_val = False
         self.integration_time = 2.4
         self._glass_attenuation = None
         self.glass_attenuation = 1.0
@@ -190,6 +191,7 @@ class TCS34725:
             self._write_u8(_REGISTER_ENABLE, enable | _ENABLE_PON | _ENABLE_AEN)
         else:
             self._write_u8(_REGISTER_ENABLE, enable & ~(_ENABLE_PON | _ENABLE_AEN))
+        self._valid_val = False
 
     @property
     def integration_time(self):
@@ -242,17 +244,9 @@ class TCS34725:
         self.active = True
         while not self._valid():
             time.sleep((self._integration_time + 0.9) / 1000.0)
-        data = tuple(
-            self._read_u16(reg)
-            for reg in (
-                _REGISTER_RDATA,
-                _REGISTER_GDATA,
-                _REGISTER_BDATA,
-                _REGISTER_CDATA,
-            )
-        )
+        c, r, g, b = self._read_4u16(_REGISTER_CDATA)
         self.active = was_active
-        return data
+        return r, g, b, c
 
     @property
     def cycles(self):
@@ -364,7 +358,10 @@ class TCS34725:
 
     def _valid(self) -> bool:
         # Check if the status bit is set and the chip is ready.
-        return bool(self._read_u8(_REGISTER_STATUS) & 0x01)
+        # Only needed directly after `active` to prevent `color_raw` returning zeros.
+        if not self._valid_val:
+            self._valid_val = bool(self._read_u8(_REGISTER_STATUS) & 0x01)
+        return self._valid_val
 
     def _read_u8(self, address: int) -> int:
         # Read an 8-bit unsigned value from the specified 8-bit address.
@@ -380,6 +377,15 @@ class TCS34725:
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=2)
         return (self._BUFFER[1] << 8) | self._BUFFER[0]
 
+    def _read_4u16(self, address: int) -> tuple[int, int, int, int]:
+        with self._device as i2c:
+            self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
+            i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=8)
+        return ((self._BUFFER[1] << 8) | self._BUFFER[0],
+                (self._BUFFER[3] << 8) | self._BUFFER[2],
+                (self._BUFFER[5] << 8) | self._BUFFER[4],
+                (self._BUFFER[7] << 8) | self._BUFFER[6])
+
     def _write_u8(self, address: int, val: int):
         # Write an 8-bit unsigned value to the specified 8-bit address.
         with self._device as i2c:
@@ -393,4 +399,4 @@ class TCS34725:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             self._BUFFER[1] = val & 0xFF
             self._BUFFER[2] = (val >> 8) & 0xFF
-            i2c.write(self._BUFFER)
+            i2c.write(self._BUFFER, end=3)
