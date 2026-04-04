@@ -381,10 +381,12 @@ class TCS34725:
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=8)
-        return ((self._BUFFER[1] << 8) | self._BUFFER[0],
-                (self._BUFFER[3] << 8) | self._BUFFER[2],
-                (self._BUFFER[5] << 8) | self._BUFFER[4],
-                (self._BUFFER[7] << 8) | self._BUFFER[6])
+        return (
+            (self._BUFFER[1] << 8) | self._BUFFER[0],
+            (self._BUFFER[3] << 8) | self._BUFFER[2],
+            (self._BUFFER[5] << 8) | self._BUFFER[4],
+            (self._BUFFER[7] << 8) | self._BUFFER[6],
+        )
 
     def _write_u8(self, address: int, val: int):
         # Write an 8-bit unsigned value to the specified 8-bit address.
