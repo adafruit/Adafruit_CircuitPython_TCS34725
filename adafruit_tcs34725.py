@@ -377,7 +377,7 @@ class TCS34725:
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=2)
         return (self._BUFFER[1] << 8) | self._BUFFER[0]
 
-    def _read_4u16(self, address: int) -> tuple[int, int, int, int]:
+    def _read_4u16(self, address: int) -> Tuple[int, int, int, int]:
         with self._device as i2c:
             self._BUFFER[0] = (address | _COMMAND_BIT) & 0xFF
             i2c.write_then_readinto(self._BUFFER, self._BUFFER, out_end=1, in_end=8)
